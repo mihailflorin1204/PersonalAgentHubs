@@ -1,0 +1,33 @@
+# Word lock files
+~$*
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies and builds
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+out/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Tauri / Rust
+src-tauri/target/
+
+# Logs and OS junk
+*.log
+.DS_Store
+Thumbs.db
+
+# Local tooling
+.idea/
+.vscode/
+*.local
