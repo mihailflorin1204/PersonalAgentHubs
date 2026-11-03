@@ -11,6 +11,8 @@ function authClient() {
   });
 }
 
+type OrganizationLoad = { ok: true; name: string | null } | { ok: false };
+
 export function Console() {
   const [mode, setMode] = useState<AccountMode>("sign-in");
   const [pending, setPending] = useState(false);
@@ -18,17 +20,34 @@ export function Console() {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
+  const [organizationsFailed, setOrganizationsFailed] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+
+  function applyOrganizations(result: OrganizationLoad) {
+    setOrganizationsFailed(!result.ok);
+    setOrganizationName(result.ok ? result.name : null);
+  }
 
   useEffect(() => {
-    const auth = authClient();
-    void auth.getSession().then(async (result) => {
-      const active = Boolean(result.data?.user);
-      setSignedIn(active);
-      if (active) {
-        await loadOrganizations(setOrganizationName);
+    async function checkSession() {
+      try {
+        const result = await authClient().getSession();
+        if (result.error) {
+          setError("Could not check the session. Sign in to continue.");
+          return;
+        }
+        const active = Boolean(result.data?.user);
+        setSignedIn(active);
+        if (active) {
+          applyOrganizations(await loadOrganizations());
+        }
+      } catch {
+        setError("Could not check the session. Sign in to continue.");
+      } finally {
+        setReady(true);
       }
-      setReady(true);
-    });
+    }
+    void checkSession();
   }, []);
 
   async function handleAccount(input: AccountSubmission) {
@@ -56,7 +75,19 @@ export function Console() {
         return;
       }
       setSignedIn(true);
-      await loadOrganizations(setOrganizationName);
+      setSignOutError(null);
+      applyOrganizations(await loadOrganizations());
+    } catch {
+      setError("Could not reach the server. Try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleRetryOrganizations() {
+    setPending(true);
+    try {
+      applyOrganizations(await loadOrganizations());
     } finally {
       setPending(false);
     }
@@ -89,6 +120,8 @@ export function Console() {
         return;
       }
       setOrganizationName(organization.name);
+    } catch {
+      setError("Could not create the organization.");
     } finally {
       setPending(false);
     }
@@ -96,11 +129,19 @@ export function Console() {
 
   async function handleSignOut() {
     setPending(true);
-    setError(null);
+    setSignOutError(null);
     try {
-      await authClient().signOut();
+      const result = await authClient().signOut();
+      if (result.error) {
+        setSignOutError("Could not sign out. Try again.");
+        return;
+      }
       setSignedIn(false);
       setOrganizationName(null);
+      setOrganizationsFailed(false);
+      setError(null);
+    } catch {
+      setSignOutError("Could not sign out. Try again.");
     } finally {
       setPending(false);
     }
@@ -129,8 +170,25 @@ export function Console() {
 
   return (
     <div className="flex flex-col gap-6">
-      {organizationName ? <OrganizationHeading name={organizationName} /> : null}
-      {organizationName ? null : (
+      {organizationsFailed ? (
+        <div className="flex w-full max-w-sm flex-col gap-4">
+          <p role="alert" className="text-sm text-red-700">
+            Could not load organizations. Try again.
+          </p>
+          <button
+            type="button"
+            disabled={pending}
+            className="w-fit rounded bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-60"
+            onClick={() => {
+              void handleRetryOrganizations();
+            }}
+          >
+            {pending ? "Please wait" : "Retry"}
+          </button>
+        </div>
+      ) : organizationName ? (
+        <OrganizationHeading name={organizationName} />
+      ) : (
         <OrganizationForm
           pending={pending}
           error={error}
@@ -139,9 +197,15 @@ export function Console() {
           }}
         />
       )}
+      {signOutError ? (
+        <p role="alert" className="text-sm text-red-700">
+          {signOutError}
+        </p>
+      ) : null}
       <button
         type="button"
-        className="w-fit text-sm text-neutral-700 underline"
+        disabled={pending}
+        className="w-fit text-sm text-neutral-700 underline disabled:opacity-60"
         onClick={() => {
           void handleSignOut();
         }}
@@ -152,11 +216,18 @@ export function Console() {
   );
 }
 
-async function loadOrganizations(setName: (name: string | null) => void) {
-  const response = await fetch("/organizations", { headers: { accept: "application/json" } });
-  if (!response.ok) {
-    return;
+async function loadOrganizations(): Promise<OrganizationLoad> {
+  try {
+    const response = await fetch("/organizations", { headers: { accept: "application/json" } });
+    if (!response.ok) {
+      return { ok: false };
+    }
+    const organizations = readOrganizationList(await response.json());
+    if (!organizations) {
+      return { ok: false };
+    }
+    return { ok: true, name: latestOrganization(organizations)?.name ?? null };
+  } catch {
+    return { ok: false };
   }
-  const organizations = readOrganizationList(await response.json());
-  setName(organizations ? latestOrganization(organizations)?.name ?? null : null);
 }
