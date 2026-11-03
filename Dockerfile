@@ -4,11 +4,13 @@ RUN corepack enable && corepack prepare pnpm@12.16.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc tsconfig.base.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/api/tsconfig.json apps/api/tsconfig.json
+COPY apps/web/package.json apps/web/package.json
 COPY packages/database/package.json packages/database/package.json
 COPY packages/database/tsconfig.json packages/database/tsconfig.json
 COPY packages/auth/package.json packages/auth/package.json
 COPY packages/auth/tsconfig.json packages/auth/tsconfig.json
-RUN pnpm install --frozen-lockfile
+COPY packages/ui/package.json packages/ui/package.json
+RUN pnpm install --frozen-lockfile --filter @agenthub/api...
 COPY apps/api/src apps/api/src
 COPY packages/database/src packages/database/src
 COPY packages/database/drizzle packages/database/drizzle
@@ -23,9 +25,11 @@ ENV PORT=3001
 RUN corepack enable && corepack prepare pnpm@12.16.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
 COPY packages/database/package.json packages/database/package.json
 COPY packages/auth/package.json packages/auth/package.json
-RUN pnpm install --frozen-lockfile --prod
+COPY packages/ui/package.json packages/ui/package.json
+RUN pnpm install --frozen-lockfile --prod --filter @agenthub/api...
 COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/packages/database/dist packages/database/dist
 COPY --from=build /app/packages/database/drizzle packages/database/drizzle
