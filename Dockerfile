@@ -13,7 +13,7 @@ COPY apps/api/src apps/api/src
 COPY packages/database/src packages/database/src
 COPY packages/database/drizzle packages/database/drizzle
 COPY packages/auth/src packages/auth/src
-RUN pnpm --filter @agenthub/database build && pnpm --filter @agenthub/api build
+RUN pnpm --filter @agenthub/database build && pnpm --filter @agenthub/auth build && pnpm --filter @agenthub/api build
 
 FROM node:22-bookworm-slim
 WORKDIR /app
@@ -29,6 +29,7 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/packages/database/dist packages/database/dist
 COPY --from=build /app/packages/database/drizzle packages/database/drizzle
+COPY --from=build /app/packages/auth/dist packages/auth/dist
 COPY docker/api-entrypoint.sh /usr/local/bin/api-entrypoint.sh
 RUN sed -i 's/\r$//' /usr/local/bin/api-entrypoint.sh && chmod +x /usr/local/bin/api-entrypoint.sh
 USER node

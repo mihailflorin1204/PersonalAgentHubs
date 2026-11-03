@@ -19,6 +19,9 @@ it("ships SQL migrations for organizations, users, and memberships", async () =>
   expect(sql).toContain('create table "organizations"');
   expect(sql).toContain('create table "users"');
   expect(sql).toContain('create table "memberships"');
+  expect(sql).toContain('create table "sessions"');
+  expect(sql).toContain('create table "accounts"');
+  expect(sql).toContain("email_verified");
   expect(sql).toContain("organization_id");
   expect(sql).toContain("user_id");
   expect(sql).toContain("organization_role");

@@ -8,6 +8,13 @@
       "when": 1793626595235,
       "tag": "0000_gorgeous_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793632992429,
+      "tag": "0001_session_account",
+      "breakpoints": true
     }
   ]
 }

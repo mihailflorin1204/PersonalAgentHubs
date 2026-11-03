@@ -62,6 +62,32 @@ it("reports connected only when the probe says the database accepted a query", a
   );
 });
 
+it("denies organization creation and reads when no session is configured, and health stays open", async () => {
+  await withApp(
+    () => "connected",
+    async (baseUrl) => {
+      const health = await fetch(`${baseUrl}/health`);
+      expect(health.status).toBe(200);
+      await expect(health.json()).resolves.toEqual({
+        status: "ok",
+        database: "connected",
+      });
+
+      const created = await fetch(`${baseUrl}/organizations`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "Hidden" }),
+      });
+      expect(created.status).toBe(401);
+      await expect(created.json()).resolves.toEqual({ status: "unauthorized" });
+
+      const listed = await fetch(`${baseUrl}/organizations`);
+      expect(listed.status).toBe(401);
+      await expect(listed.json()).resolves.toEqual({ status: "unauthorized" });
+    },
+  );
+});
+
 it("does not leak a connection string when status cannot be resolved", async () => {
   await withApp(
     async () => {

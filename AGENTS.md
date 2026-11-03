@@ -4,6 +4,8 @@ This repository is the AI Agent Infrastructure Platform. The long-form source is
 
 This chat is the tech lead. Specialists live in `.cursor/agents/` and start each run with a clean context. Assign one outcome, the owned paths, and the constraints below. Create the shared workspace before specialists implement inside it. Do not let several writers invent the monorepo at once.
 
+Work is tracked in Jira project REN on https://aicodingmihail.atlassian.net/jira/software/projects/REN/boards/1. Take the next story from the active sprint for the seat that owns the paths. Move it to In Progress when a branch starts, In Review when the security reviewer has the diff, and Done when it is merged to `main`. A story's label is the seat: `platform-api`, `mcp-gateway`, `web-console`, or `desktop-runtime`.
+
 ## Stack
 
 TypeScript, pnpm workspaces, Turborepo. Next.js and Tailwind plus shadcn/ui for the web console. Tauri 2 and React for the desktop shell. A Node.js sidecar for local MCP execution. Express for the management API. The official MCP TypeScript SDK for protocol work. PostgreSQL and Drizzle as the source of truth. Redis and BullMQ only when a real queue exists. Better Auth for human sessions. Zod for runtime validation. Vitest and Playwright for tests.
